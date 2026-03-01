@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "Saathi",
+    "slug": "saathi-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.saathi.mobile",
+      "config": {
+        "googleMapsApiKey": "AIzaSyBRgBszbOKxCoTLBRCJ64EGVvi4LdoCLIM"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1a73e8"
+      },
+      "package": "com.saathi.mobile",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyBRgBszbOKxCoTLBRCJ64EGVvi4LdoCLIM"
+        }
+      },
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA"
+      ]
+    },
+    "plugins": [
+      "expo-location",
+      "expo-camera",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Saathi to access your camera for obstacle detection."
+        }
+      ],
+      "expo-asset"
+    ],
+    "extra": {
+      "apiUrl": "http://localhost:8000"
+    }
+  }
+}

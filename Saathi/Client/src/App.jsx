@@ -11,33 +11,48 @@ function App() {
   const [safeMode, setSafeMode] = useState(true);
   const [route, setRoute] = useState([]);
   const [detectedObjects, setDetectedObjects] = useState([]);
-
   const [destinationInput, setDestinationInput] = useState("");
   const [destinationCoords, setDestinationCoords] = useState(null);
   const [destinationError, setDestinationError] = useState(null);
 
-  // Get GPS location
+  // One-time initial GPS location
   useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => setCurrentLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        (err) => {
-          console.error(err);
-          alert("Could not get your location. Please allow location access.");
-        },
-        { enableHighAccuracy: true }
-      );
-    } else alert("Geolocation not supported by this browser.");
+    if (!navigator.geolocation) {
+      alert("Geolocation not supported by this browser.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setCurrentLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      (err) => {
+        console.error(err);
+        alert("Could not get your location. Please allow location access.");
+      },
+      { enableHighAccuracy: true }
+    );
+  }, []);
+
+  // Continuous GPS updates as user moves (live navigation)
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setCurrentLocation((prev) => {
+          if (prev?.lat === latitude && prev?.lng === longitude) return prev;
+          return { lat: latitude, lng: longitude };
+        });
+      },
+      (err) => console.error("GPS Watch Error:", err),
+      { enableHighAccuracy: false, maximumAge: 0, timeout: 10000 }
+    );
+    return () => navigator.geolocation.clearWatch(watchId);
   }, []);
 
   const handleGoClick = async () => {
-    console.log("Geocoding destination:", destinationInput);
     if (!destinationInput.trim()) return;
     setDestinationError(null);
-
     try {
       const coords = await geocodeDestination(destinationInput);
-      console.log(coords);
       if (!coords) {
         setDestinationError("Could not find destination. Try another name.");
         setDestinationCoords(null);

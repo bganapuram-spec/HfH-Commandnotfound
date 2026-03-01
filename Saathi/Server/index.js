@@ -4,18 +4,19 @@ const config = require('./config');
 const cors = require('cors');
 
 // Import routes
-const routeRouter = require('./routes/route'); // your /api/route
-const aiRouter = require('./routes/ai');       // your /api/ai
+const routeRouter = require('./routes/route');
+const aiRouter = require('./routes/ai');
+const detectRouter = require('./routes/detect');
 
 const app = express();
 const PORT = config.port || 3000;
 
-// Middleware
-app.use(express.json());
+// Middleware (larger limit for /api/detect base64 images)
+app.use(express.json({ limit: '15mb' }));
 app.use(cors());
-// Mount routes
-app.use('/api/route', routeRouter); // <- uncommented and mounted correctly
+app.use('/api/route', routeRouter);
 app.use('/api/ai', aiRouter);
+app.use('/api/detect', detectRouter);
 
 // Health check
 app.get('/', (req, res) => {

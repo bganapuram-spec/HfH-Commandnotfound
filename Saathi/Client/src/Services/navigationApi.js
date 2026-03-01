@@ -11,7 +11,8 @@ export const GOOGLE_MAPS_API_KEY = "AIzaSyBRgBszbOKxCoTLBRCJ64EGVvi4LdoCLIM";
  */
 export async function getRoute(start, end, safeMode = true) {
   try {
-    const response = await fetch("http://localhost:8000/api/route", {
+    const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
+    const response = await fetch(`${baseUrl}/api/route`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ start, end, safeMode })

@@ -9,6 +9,7 @@ const ORS_API_KEY = process.env.ORS_API_KEY; // put your ORS key in .env
 // POST /api/route
 router.post("/", async (req, res) => {
   try {
+    console.log("req.body",req.body);
     const { start, end, safeMode } = req.body;
     // start & end are { lat, lng }
 
