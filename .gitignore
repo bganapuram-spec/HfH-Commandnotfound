@@ -6,6 +6,7 @@ Saathi/Server/node_modules/
 dist
 dist-ssr
 *.local
+Saathi/Server/.env
 .env
 .env.local
 .env.*.local
