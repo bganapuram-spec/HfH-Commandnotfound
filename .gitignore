@@ -1,15 +1,37 @@
 # Dependencies
 node_modules/
 Saathi/Server/node_modules/
+Saathi/Mobile/node_modules/
+
+# Python
+Saathi/Server/python-detection/venv/
+Saathi/Server/python-detection/__pycache__/
+Saathi/Server/python-detection/*.pyc
+**/__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
 
 # Build / env
 dist
 dist-ssr
 *.local
-Saathi/Server/.env
 .env
 .env.local
 .env.*.local
+Saathi/Server/.env
+Saathi/Mobile/.env
+Saathi/Mobile/src/.env
+
+# Expo / React Native
+.expo/
+Saathi/Mobile/.expo/
+*.jks
+*.p8
+*.p12
+Saathi/Mobile/android/app/build/
+Saathi/Mobile/ios/Pods/
+Saathi/Mobile/ios/build/
 
 # Logs
 logs
@@ -23,3 +45,9 @@ yarn-error.log*
 !.vscode/extensions.json
 .idea
 .DS_Store
+
+# Large / binary (avoid "files too large")
+*.dylib
+*.so
+*.dll
+.cache/
