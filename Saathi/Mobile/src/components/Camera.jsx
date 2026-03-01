@@ -36,14 +36,14 @@ export default function Camera({ setDetectedObjects, detectedObjects = [] }) {
     setDetectedObjects?.([]);
   }, [setDetectedObjects]);
 
-  // Live updates: capture and run object detection every 1 second; announce when something is too near
+  // Run detection every 1 second; log all detections; only warn (voice) when something is within 1m
   useEffect(() => {
     if (!active || !setDetectedObjects || !cameraRef.current) return;
     const runDetection = async () => {
       try {
         const photo = await cameraRef.current?.takePictureAsync({
           base64: true,
-          quality: 0.4,
+          quality: 0.65,
           skipProcessing: true,
         });
         if (!photo?.base64) return;
@@ -56,11 +56,15 @@ export default function Camera({ setDetectedObjects, detectedObjects = [] }) {
           direction: getDirectionFromBbox(obj.bbox, w),
         }));
         setDetectedObjects(withDirection);
+        const ts = new Date().toISOString().split('T')[1].slice(0, 8);
+        const list = results.map((o) => `${o.class} ${(o.score * 100).toFixed(0)}%`).join(', ') || 'none';
+        console.log(`[Detection ${ts}] (${results.length}) ${list}`);
         announceProximityAlerts(withDirection, w, h);
       } catch (e) {
-        // ignore single-frame errors
+        console.warn('Detection run failed:', e?.message || e);
       }
     };
+    runDetection();
     const id = setInterval(runDetection, 1000);
     detectionIntervalRef.current = id;
     return () => clearInterval(id);
@@ -109,7 +113,8 @@ export default function Camera({ setDetectedObjects, detectedObjects = [] }) {
                     ]}
                   >
                     <Text style={styles.bboxLabel} numberOfLines={1}>
-                      {obj.class} {(obj.score * 100).toFixed(0)}%
+                      {obj.class}
+                      {obj.trafficLightState && obj.trafficLightState !== 'unknown' ? ` (${obj.trafficLightState})` : ''} {(obj.score * 100).toFixed(0)}%
                     </Text>
                   </View>
                 );
@@ -126,7 +131,9 @@ export default function Camera({ setDetectedObjects, detectedObjects = [] }) {
               <ScrollView>
                 {detectedObjects.map((obj, i) => (
                   <Text key={`${obj.class}-${i}`} style={styles.listItem}>
-                    {obj.class} — {(obj.score * 100).toFixed(0)}% — {obj.direction ?? '—'}
+                    {obj.class}
+                    {obj.trafficLightState && obj.trafficLightState !== 'unknown' ? ` (${obj.trafficLightState})` : ''}
+                    {' — '}{(obj.score * 100).toFixed(0)}% — {obj.direction ?? '—'}
                   </Text>
                 ))}
               </ScrollView>

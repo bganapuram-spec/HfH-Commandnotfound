@@ -15,18 +15,29 @@ function distanceMeters(a, b) {
   return 2 * R * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
 }
 
+function sameCoords(a, b) {
+  if (!a || !b) return a === b;
+  return a.lat === b.lat && a.lng === b.lng;
+}
+
 export default function MapORS({ currentLocation, safeMode, setRoute, setRouteSteps, destination }) {
   const [localRoute, setLocalRoute] = useState([]);
   const lastFetchOrigin = useRef(null);
+  const lastDestination = useRef(null);
 
   useEffect(() => {
     if (!currentLocation || !destination) return;
+
+    const destinationChanged = !sameCoords(lastDestination.current, destination);
     const distFromLast = lastFetchOrigin.current
       ? distanceMeters(currentLocation, lastFetchOrigin.current)
       : Infinity;
-    if (distFromLast < REFETCH_DISTANCE_M && lastFetchOrigin.current) return;
+    const skip = !destinationChanged && distFromLast < REFETCH_DISTANCE_M && lastFetchOrigin.current;
+    if (skip) return;
 
+    lastDestination.current = { ...destination };
     lastFetchOrigin.current = { ...currentLocation };
+
     async function fetchRoute() {
       try {
         const routeData = await getRoute(currentLocation, destination, safeMode);

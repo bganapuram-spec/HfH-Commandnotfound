@@ -16,4 +16,20 @@ router.post('/chat', async (req, res) => {
   }
 });
 
+// POST /api/ai/extract-destination — from user speech, LLM returns a single destination string
+router.post('/extract-destination', async (req, res) => {
+  try {
+    const { text } = req.body;
+    if (!text || typeof text !== 'string') {
+      return res.status(400).json({ error: 'text required' });
+    }
+    const destination = await llmService.extractDestination(text.trim());
+    console.log('destination', destination);
+    res.json({ destination: destination || '' });
+  } catch (err) {
+    console.error('extract-destination error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

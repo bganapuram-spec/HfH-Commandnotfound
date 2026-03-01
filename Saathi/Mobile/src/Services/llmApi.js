@@ -7,6 +7,7 @@ export async function chatWithLLM(messages, context = null) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ messages, context }),
     });
+    console.log('response', response);
     if (!response.ok) throw new Error(`Error calling LLM API: ${response.status}`);
     const data = await response.json();
     return data.reply;

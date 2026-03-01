@@ -1,7 +1,6 @@
 import Constants from 'expo-constants';
 
-// Backend runs on port 8000 (Server .env PORT=8000).
-// On a physical device, localhost = the phone, so we use the same host as Metro (your Mac's IP).
+// On a physical device, localhost = the phone. Use the same host as Metro (your Mac's IP).
 const getApiBaseUrl = () => {
   if (process.env.EXPO_PUBLIC_API_URL) return process.env.EXPO_PUBLIC_API_URL;
   const hostUri = Constants.expoConfig?.hostUri;

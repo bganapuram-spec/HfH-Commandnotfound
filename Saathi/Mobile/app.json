@@ -38,7 +38,14 @@
           "cameraPermission": "Allow Saathi to access your camera for obstacle detection."
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      [
+        "@jamsch/expo-speech-recognition",
+        {
+          "microphonePermission": "Allow Saathi to use the microphone.",
+          "speechRecognitionPermission": "Allow Saathi to use speech recognition."
+        }
+      ]
     ],
     "extra": {
       "apiUrl": "http://localhost:8000"

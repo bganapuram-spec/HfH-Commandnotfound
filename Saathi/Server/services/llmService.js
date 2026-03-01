@@ -49,4 +49,37 @@ async function chat(messages, context = null) {
   return candidate.content.parts[0].text;
 }
 
-module.exports = { chat };
+const EXTRACT_SYSTEM = `You are a helper for a blind user's navigation app. Given what the user said, extract ONLY the place or address they want to go to.
+Reply with just that destination: a short place name or address, nothing else. No punctuation at the end, no "The destination is", no explanation.
+Examples:
+- "I want to go to the coffee shop" → Coffee shop
+- "Take me to Central Park" → Central Park
+- "How do I get to 123 Main Street?" → 123 Main Street
+If you cannot determine a destination, reply with exactly: NONE`;
+
+function cleanExtractedDestination(raw) {
+  let s = (raw || '').trim();
+  const prefixes = [
+    /^the destination is\s*/i,
+    /^destination:\s*/i,
+    /^destination is\s*/i,
+    /^place:\s*/i,
+    /^address:\s*/i,
+  ];
+  for (const p of prefixes) {
+    s = s.replace(p, '').trim();
+  }
+  return s;
+}
+
+async function extractDestination(userText) {
+  const messages = [
+    { role: 'user', content: EXTRACT_SYSTEM + '\n\nUser said: ' + userText },
+  ];
+  const raw = await chat(messages, null);
+  const trimmed = cleanExtractedDestination(raw);
+  if (trimmed.toUpperCase() === 'NONE' || !trimmed) return '';
+  return trimmed;
+}
+
+module.exports = { chat, extractDestination };

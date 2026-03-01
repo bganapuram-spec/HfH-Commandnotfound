@@ -22,14 +22,20 @@ export async function getRoute(start, end, safeMode = true) {
   }
 }
 
-export async function geocodeDestination(address) {
+/**
+ * Geocode an address/place name to { lat, lng } using Google Geocoding API.
+ * @param address - Destination string (from user input or LLM extract).
+ * @param biasNear - Optional { lat, lng } to bias results near user (helps "coffee shop", "library").
+ */
+export async function geocodeDestination(address, biasNear = null) {
+  if (!address?.trim()) return null;
   try {
-    const response = await fetch(
-      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_MAPS_API_KEY}`
-    );
-    console.log('Geocoding response:', response);
+    let url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_MAPS_API_KEY}`;
+    if (biasNear?.lat != null && biasNear?.lng != null) {
+      url += `&location=${biasNear.lat},${biasNear.lng}`;
+    }
+    const response = await fetch(url);
     const data = await response.json();
-console.log('Geocoding data:', data);  // status, results, etc.
     if (data.status === 'OK' && data.results?.length > 0) {
       return data.results[0].geometry.location;
     }

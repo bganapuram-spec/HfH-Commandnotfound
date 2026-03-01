@@ -7,6 +7,7 @@ const cors = require('cors');
 const routeRouter = require('./routes/route');
 const aiRouter = require('./routes/ai');
 const detectRouter = require('./routes/detect');
+const speechRouter = require('./routes/speech');
 
 const app = express();
 const PORT = config.port || 3000;
@@ -17,6 +18,7 @@ app.use(cors());
 app.use('/api/route', routeRouter);
 app.use('/api/ai', aiRouter);
 app.use('/api/detect', detectRouter);
+app.use('/api/speech', speechRouter);
 
 // Health check
 app.get('/', (req, res) => {
