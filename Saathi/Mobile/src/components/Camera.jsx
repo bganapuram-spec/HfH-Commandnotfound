@@ -2,13 +2,17 @@ import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { detectObjects } from '../Services/detection';
-import { getDirectionFromBbox } from '../Services/proximityAlerts';
+import { getDirectionFromBbox, announceProximityAlerts } from '../Services/proximityAlerts';
+
+const PREVIEW_HEIGHT = 220;
 
 export default function Camera({ setDetectedObjects, detectedObjects = [] }) {
   const cameraRef = useRef(null);
   const [permission, requestPermission] = useCameraPermissions();
   const [active, setActive] = useState(false);
   const [error, setError] = useState(null);
+  const [previewWidth, setPreviewWidth] = useState(0);
+  const [photoSize, setPhotoSize] = useState({ width: 400, height: 300 });
   const detectionIntervalRef = useRef(null);
 
   const startCamera = useCallback(async () => {
@@ -32,8 +36,7 @@ export default function Camera({ setDetectedObjects, detectedObjects = [] }) {
     setDetectedObjects?.([]);
   }, [setDetectedObjects]);
 
-  // Capture a frame and run object detection via backend every 2.5s
-  const PREVIEW_WIDTH = 400;
+  // Live updates: capture and run object detection every 1 second; announce when something is too near
   useEffect(() => {
     if (!active || !setDetectedObjects || !cameraRef.current) return;
     const runDetection = async () => {
@@ -45,16 +48,20 @@ export default function Camera({ setDetectedObjects, detectedObjects = [] }) {
         });
         if (!photo?.base64) return;
         const results = await detectObjects(photo.base64);
+        const w = photo.width || 400;
+        const h = photo.height || 300;
+        setPhotoSize({ width: w, height: h });
         const withDirection = results.map((obj) => ({
           ...obj,
-          direction: getDirectionFromBbox(obj.bbox, photo.width || PREVIEW_WIDTH),
+          direction: getDirectionFromBbox(obj.bbox, w),
         }));
         setDetectedObjects(withDirection);
+        announceProximityAlerts(withDirection, w, h);
       } catch (e) {
         // ignore single-frame errors
       }
     };
-    const id = setInterval(runDetection, 2500);
+    const id = setInterval(runDetection, 1000);
     detectionIntervalRef.current = id;
     return () => clearInterval(id);
   }, [active, setDetectedObjects]);
@@ -75,11 +82,41 @@ export default function Camera({ setDetectedObjects, detectedObjects = [] }) {
       ) : null}
       {active && (
         <>
-          <View style={styles.preview}>
+          <View
+            style={styles.preview}
+            onLayout={(e) => setPreviewWidth(e.nativeEvent.layout.width)}
+          >
             <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing="back" />
+            {previewWidth > 0 &&
+              detectedObjects.map((obj, i) => {
+                if (!obj.bbox || obj.bbox.length < 4) return null;
+                const [x, y, w, h] = obj.bbox;
+                const pw = photoSize.width || 1;
+                const ph = photoSize.height || 1;
+                const scaleX = previewWidth / pw;
+                const scaleY = PREVIEW_HEIGHT / ph;
+                return (
+                  <View
+                    key={`box-${obj.class}-${i}`}
+                    style={[
+                      styles.bbox,
+                      {
+                        left: x * scaleX,
+                        top: y * scaleY,
+                        width: w * scaleX,
+                        height: h * scaleY,
+                      },
+                    ]}
+                  >
+                    <Text style={styles.bboxLabel} numberOfLines={1}>
+                      {obj.class} {(obj.score * 100).toFixed(0)}%
+                    </Text>
+                  </View>
+                );
+              })}
           </View>
           <Text style={styles.hint}>
-            Object detection runs on the backend every few seconds.
+            Live detection every 1s. Voice alert when something is too near.
           </Text>
           <View style={styles.list}>
             <Text style={styles.listTitle}>Detected objects:</Text>
@@ -122,7 +159,14 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   buttonText: { color: '#000', fontSize: 16 },
-  preview: { width: '100%', height: 220, backgroundColor: '#000', borderRadius: 8, overflow: 'hidden' },
+  preview: { width: '100%', height: PREVIEW_HEIGHT, backgroundColor: '#000', borderRadius: 8, overflow: 'hidden', position: 'relative' },
+  bbox: {
+    position: 'absolute',
+    borderWidth: 2,
+    borderColor: '#00ff00',
+    backgroundColor: 'rgba(0,255,0,0.15)',
+  },
+  bboxLabel: { color: '#00ff00', fontSize: 10, backgroundColor: 'rgba(0,0,0,0.7)', padding: 2 },
   hint: { fontSize: 12, color: '#666', marginTop: 8 },
   list: { marginTop: 8 },
   listTitle: { fontWeight: '600', marginBottom: 4 },

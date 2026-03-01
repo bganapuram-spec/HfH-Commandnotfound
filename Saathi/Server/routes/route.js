@@ -20,10 +20,8 @@ router.post("/", async (req, res) => {
           [start.lng, start.lat], // ORS uses [lng, lat]
           [end.lng, end.lat]
         ],
-
-        // ✅ FIX: Allow snapping within 50 meters
         radiuses: [50, 50],
-
+        instructions: true,
         options: {
           avoid_features: safeMode ? ["steps", "ferries"] : []
         }
@@ -36,17 +34,34 @@ router.post("/", async (req, res) => {
       }
     );
 
-    // ORS returns routes[].geometry as encoded polyline
     const route = response.data.routes && response.data.routes[0];
     if (!route || !route.geometry) {
       return res.status(502).json({ error: "No route from ORS" });
     }
 
-    // polyline.decode() returns [[lat, lng], ...]
     const decoded = polyline.decode(route.geometry);
     const routeCoords = decoded.map(([lat, lng]) => ({ lat, lng }));
 
-    res.json({ route: routeCoords });
+    // Turn-by-turn steps from ORS segments (for live "steps to go" like GMaps)
+    const steps = [];
+    const segments = route.segments || [];
+    const typeToText = { 0: "Turn left", 1: "Turn right", 2: "Sharp left", 3: "Sharp right", 4: "Slight left", 5: "Slight right", 6: "Continue straight", 10: "Arrive", 11: "Depart" };
+    for (const seg of segments) {
+      const segSteps = seg.steps || [];
+      for (const s of segSteps) {
+        const dist = s.distance != null ? Math.round(s.distance) : 0;
+        let text = (s.instruction || "").trim();
+        if (!text && s.type != null) text = typeToText[s.type] || "Continue";
+        steps.push({
+          instruction: text || "Continue",
+          distance: dist,
+          type: s.type,
+          wayPoints: s.way_points
+        });
+      }
+    }
+
+    res.json({ route: routeCoords, steps });
 
   } catch (err) {
     console.error("ORS API error:", err.response?.data || err.message);

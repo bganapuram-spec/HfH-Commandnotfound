@@ -13,13 +13,14 @@ import * as Location from 'expo-location';
 import Voice from './components/Voice';
 import Camera from './components/Camera';
 import MapORS from './components/MapORS';
-import MapNative from './components/MapNative';
+import MapGoogle from './components/MapGoogle';
 import { geocodeDestination } from './Services/navigationApi';
 
 export default function App() {
   const [currentLocation, setCurrentLocation] = useState(null);
   const [safeMode, setSafeMode] = useState(true);
   const [route, setRoute] = useState([]);
+  const [routeSteps, setRouteSteps] = useState([]);
   const [detectedObjects, setDetectedObjects] = useState([]);
   const [destinationInput, setDestinationInput] = useState('');
   const [destinationCoords, setDestinationCoords] = useState(null);
@@ -48,8 +49,8 @@ export default function App() {
     const sub = Location.watchPositionAsync(
       {
         accuracy: Location.Accuracy.Balanced,
-        timeInterval: 5000,
-        distanceInterval: 5,
+        timeInterval: 2000,
+        distanceInterval: 3,
       },
       (loc) => {
         setCurrentLocation({
@@ -119,11 +120,28 @@ export default function App() {
             currentLocation={currentLocation}
             safeMode={safeMode}
             setRoute={setRoute}
+            setRouteSteps={setRouteSteps}
             destination={destinationCoords}
           />
-          <MapNative
+          {routeSteps.length > 0 && (
+            <View style={styles.stepsCard}>
+              <Text style={styles.stepsCardTitle}>Steps to destination</Text>
+              {routeSteps.map((s, i) => {
+                const dist = s.distance != null ? s.distance : 0;
+                const instr = (s.instruction || '').trim();
+                const line = dist > 0 ? `In ${dist}m ${instr}` : instr;
+                return (
+                  <Text key={i} style={styles.stepsCardItem}>
+                    {i + 1}. {line}
+                  </Text>
+                );
+              })}
+            </View>
+          )}
+          <MapGoogle
             route={route}
             currentLocation={currentLocation}
+            routeSteps={routeSteps}
             error={null}
           />
         </>
@@ -171,4 +189,24 @@ const styles = StyleSheet.create({
   destinationError: { color: 'red', marginBottom: 8 },
   locationError: { color: 'red', marginBottom: 12 },
   loadingLocation: { color: '#666', marginBottom: 12 },
+  stepsCard: {
+    backgroundColor: '#e8f4fc',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#1a73e8',
+  },
+  stepsCardTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#1a73e8',
+    marginBottom: 10,
+  },
+  stepsCardItem: {
+    fontSize: 15,
+    color: '#111',
+    marginBottom: 6,
+    lineHeight: 22,
+  },
 });
