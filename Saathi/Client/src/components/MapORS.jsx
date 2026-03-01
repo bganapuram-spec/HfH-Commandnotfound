@@ -1,32 +1,25 @@
-// client/components/MapORS.jsx
 import React, { useEffect, useState } from "react";
 import { getRoute } from "../Services/navigationApi";
 
-function MapORS({ currentLocation, safeMode, setRoute }) {
+function MapORS({ currentLocation, safeMode, setRoute, destination }) {
   const [localRoute, setLocalRoute] = useState([]);
 
   useEffect(() => {
-    if (!currentLocation) return;
+    if (!currentLocation || !destination) return;
 
     async function fetchRoute() {
       try {
-        // For testing, example destination slightly offset
-        const destination = {
-          lat: currentLocation.lat + 0.002,
-          lng: currentLocation.lng + 0.002
-        };
-
         const routeData = await getRoute(currentLocation, destination, safeMode);
 
-        setLocalRoute(routeData.route);
-        setRoute(routeData.route);
+        setLocalRoute(routeData.route || []);
+        setRoute(routeData.route || []);
       } catch (err) {
         console.error("Failed to fetch ORS route:", err);
       }
     }
 
     fetchRoute();
-  }, [currentLocation, safeMode, setRoute]);
+  }, [currentLocation, safeMode, destination, setRoute]);
 
   useEffect(() => {
     console.log("MapORS mounted");
@@ -43,7 +36,7 @@ function MapORS({ currentLocation, safeMode, setRoute }) {
         border: "1px solid #333",
         marginBottom: "1rem",
         padding: "1rem",
-        overflowY: "auto"
+        overflowY: "auto",
       }}
     >
       <h3>ORS Map</h3>

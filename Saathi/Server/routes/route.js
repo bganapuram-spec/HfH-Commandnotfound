@@ -19,12 +19,19 @@ router.post("/", async (req, res) => {
           [start.lng, start.lat], // ORS uses [lng, lat]
           [end.lng, end.lat]
         ],
+
+        // ✅ FIX: Allow snapping within 50 meters
+        radiuses: [50, 50],
+
         options: {
           avoid_features: safeMode ? ["steps", "ferries"] : []
         }
       },
       {
-        headers: { Authorization: ORS_API_KEY, "Content-Type": "application/json" }
+        headers: {
+          Authorization: ORS_API_KEY,
+          "Content-Type": "application/json"
+        }
       }
     );
 
@@ -33,13 +40,15 @@ router.post("/", async (req, res) => {
     if (!route || !route.geometry) {
       return res.status(502).json({ error: "No route from ORS" });
     }
+
     // polyline.decode() returns [[lat, lng], ...]
     const decoded = polyline.decode(route.geometry);
     const routeCoords = decoded.map(([lat, lng]) => ({ lat, lng }));
 
     res.json({ route: routeCoords });
+
   } catch (err) {
-    console.error("ORS API error:", err.message);
+    console.error("ORS API error:", err.response?.data || err.message);
     res.status(500).json({ error: err.message });
   }
 });
