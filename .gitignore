@@ -1,5 +1,6 @@
 # Dependencies
 node_modules/
+Saathi/Server/node_modules/
 
 # Build / env
 dist
